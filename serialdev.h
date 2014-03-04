@@ -15,6 +15,8 @@ public:
     void setDebug (const bool &val);
     void start ();
     bool configPort(const QString &name);
+signals:
+    void dataFromDevice(const QByteArray &buffer);
 protected slots:
     void bytesWritten(qint64 bytes);
     void fromDeviceSlot();

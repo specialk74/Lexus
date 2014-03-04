@@ -11,12 +11,13 @@ public:
     static TcpServer * instance (QObject * parent = 0);
     ~TcpServer();
     void setDebug (const bool &val);
+protected slots:
+    void newConnectionSlot();
+    void erroSocketSlot(QAbstractSocket::SocketError);
 protected:
     TcpServer (QObject * parent);
     void debug (const QString &testo);
     void deleteClient(QTcpSocket *socket);
-    void newConnectionSlot();
-    void erroSocketSlot(QAbstractSocket::SocketError);
 private:
     static TcpServer *m_Instance;
     TcpClient* m_client;

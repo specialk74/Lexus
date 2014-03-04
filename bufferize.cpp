@@ -33,9 +33,11 @@ void Bufferize::addBuffer(const QByteArray &buffer) {
 
     quint8 type = 0;
     if (m_dimVector == 0) {
+        qFatal("Dim Vector is 0");
         return;
     }
 #warning "Ricavare type message"
+    type = buffer.at(0);
     switch (type) {
     case TYPE_SYNC:
         m_Sync = buffer;

@@ -13,16 +13,14 @@ public:
     QTcpSocket * getSocket ();
     void setDebug (const bool &val) { m_debug = val; }
 
-
 protected slots:
     void fromClientsSlot();
+    void send (const QByteArray &buffer);
 
 protected:
     QByteArray m_buffer;
     QTcpSocket *m_socket;
     bool m_debug;
-
-    void send (const QByteArray &buffer);
 };
 
 

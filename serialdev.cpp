@@ -170,7 +170,15 @@ void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
  */
 void SerialDev::fromDeviceSlot() {
     QByteArray buffer = readAll();
-#warning "Collegare al client"
+    if (m_debug) {
+        QDebug debugBuffer = qDebug();
+        debugBuffer << headDebug << "Rx ";
+        quint8 var;
+        foreach (var, buffer) {
+            debugBuffer << hex << var;
+        }
+    }
+    emit dataFromDevice(buffer);
 }
 
 void SerialDev::bytesWritten(qint64) {

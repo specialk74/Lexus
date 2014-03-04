@@ -14,9 +14,9 @@ public:
     void setVector(const quint32 &dim);
     enum {
         TYPE_NONE = 0,
-        TYPE_SYNC,
-        TYPE_ISTANT_CMD,
-        TYPE_SEQUENCE
+        TYPE_SYNC = 'p',
+        TYPE_ISTANT_CMD = 'i',
+        TYPE_SEQUENCE = 'o'
     };
 protected:
     Bufferize(QObject *parent);

@@ -2,6 +2,7 @@
 
 #include "bufferize.h"
 #include "tcpclient.h"
+#include "serialdev.h"
 
 static const char headDebug[] = "[TcpClient]";
 
@@ -12,8 +13,8 @@ TcpClient::TcpClient(QObject *parent) :
 
     m_debug = NULL;
     m_socket = NULL;
-    // Gestione dei dati quando arrivano da un Client
-    //m_statoParser = STATO_TCPIP_DLE_STX;
+    connect (SerialDev::instance(), SIGNAL(dataFromDevice(QByteArray)),
+             this, SLOT(send(QByteArray)));
 }
 
 

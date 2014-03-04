@@ -20,6 +20,9 @@ TcpServer::TcpServer (QObject * parent) : QTcpServer (parent) {
     m_Instance = this;
     m_client = NULL;
     m_debug = false;
+
+    // Ogni nuova connessione da parte dei clients, viene gestita dallo slot "newConnectionSlot"
+    connect (this, SIGNAL(newConnection()), this, SLOT(newConnectionSlot()));
 }
 
 TcpServer::~TcpServer() {
