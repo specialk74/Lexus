@@ -3,36 +3,43 @@
 #include "serialdev.h"
 
 static const char headDebug[] = "[SerialDev]";
+SerialDev * SerialDev::m_Instance = NULL;
 
-SerialDev::SerialDev(const QSerialPortInfo &info, QObject *parent) :
-    QSerialPort(info, parent)
-{
-    m_debug = false;
-    m_sendInProgress = false;
-
-    qDebug() << headDebug << "CTor" << info.portName();
-
-    // Sono riuscito a configurare la porta?
-    if (configPort())
-    {
-        connect(this, SIGNAL(error(QSerialPort::SerialPortError)),
-                this, SLOT(errorSlot(QSerialPort::SerialPortError)));
-        connect(this, SIGNAL(readyRead()), this, SLOT(fromDeviceSlot()));
+SerialDev *SerialDev::instance(QObject *parent) {
+    if (m_Instance == NULL) {
+        new SerialDev(parent);
     }
+
+    return m_Instance;
+}
+
+SerialDev::SerialDev(QObject *parent) :
+    QSerialPort(parent)
+{
+    qDebug() << __FILE__ << __LINE__ << __func__;
+    m_Instance = this;
+    m_debug = false;
+//    m_sendInProgress = false;
+
+    qDebug() << headDebug << "CTor";
 }
 
 SerialDev::~SerialDev()
 {
+    qDebug() << __FILE__ << __LINE__ << __func__;
+    m_Instance = NULL;
     qDebug() << headDebug << "DTor" << portName();
 }
 
 void SerialDev::setDebug (const bool &val)
 {
+    qDebug() << __FILE__ << __LINE__ << __func__;
     m_debug = val;
 }
 
 void SerialDev::debug (const QString &testo)
 {
+    qDebug() << __FILE__ << __LINE__ << __func__;
     if (m_debug) {
         qDebug() << headDebug << qPrintable(testo);
     }
@@ -42,8 +49,11 @@ void SerialDev::debug (const QString &testo)
  * \brief SerialDev::configPort - Parametri per configurare la porta seriale
  * \return true se riesce a configurare correttamente la porta seriale
  */
-bool SerialDev::configPort ()
+bool SerialDev::configPort (const QString &name)
 {
+    qDebug() << __FILE__ << __LINE__ << __func__;
+    setPortName(name);
+
     if (!open(QIODevice::ReadWrite)) {
         QString testo = QString("Can't open %1, error code %2")
                     .arg(portName()).arg(error());
@@ -86,11 +96,16 @@ bool SerialDev::configPort ()
         return false;
     }
 
+    connect(this, SIGNAL(error(QSerialPort::SerialPortError)),
+            this, SLOT(errorSlot(QSerialPort::SerialPortError)));
+    connect(this, SIGNAL(readyRead()), this, SLOT(fromDeviceSlot()));
+
    return true;
 }
 
 void SerialDev::sendMsg (const QByteArray &buffer) {
-    m_sendInProgress = true;
+//    m_sendInProgress = true;
+    qDebug() << __FILE__ << __LINE__ << __func__;
     if (m_debug) {
         QDebug debugBuffer = qDebug();
         debugBuffer << headDebug << "Tx ";
@@ -105,10 +120,11 @@ void SerialDev::sendMsg (const QByteArray &buffer) {
 }
 
 void SerialDev::start () {
+    qDebug() << __FILE__ << __LINE__ << __func__;
     QByteArray buffer;
     #warning "Controllare se funziona bytesToWrite"
 //	if ((m_sendInProgress == false) && m_bufferize && m_bufferize->getBuffer(buffer)) {
-    if ((bytesToWrite() == 0) && m_bufferize && m_bufferize->getBuffer(buffer)) {
+    if ((bytesToWrite() == 0) && Bufferize::instance()->getBuffer(buffer)) {
         sendMsg (buffer);
     }
 }
@@ -124,6 +140,7 @@ void SerialDev::start () {
  * \param serialPortError
  */
 void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
+    qDebug() << __FILE__ << __LINE__ << __func__;
     if (m_debug) {
         qDebug() << "Error" << serialPortError;
     }
@@ -153,9 +170,10 @@ void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
  */
 void SerialDev::fromDeviceSlot() {
     QByteArray buffer = readAll();
+#warning "Collegare al client"
 }
 
-void SerialDev::bytesWritten(qint64 bytes) {
-    m_sendInProgress = false;
+void SerialDev::bytesWritten(qint64) {
+//    m_sendInProgress = false;
     start();
 }

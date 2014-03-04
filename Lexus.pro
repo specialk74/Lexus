@@ -18,8 +18,12 @@ LIBS += -lQtSerialPort
 
 SOURCES += main.cpp \
     bufferize.cpp \
-    serialdev.cpp
+    serialdev.cpp \
+    tcpclient.cpp \
+    tcpserver.cpp
 
 HEADERS += \
     bufferize.h \
-    serialdev.h
+    serialdev.h \
+    tcpclient.h \
+    tcpserver.h

@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "bufferize.h"
 #include "serialdev.h"
 
@@ -17,54 +18,56 @@ Bufferize::~Bufferize () {
 }
 
 Bufferize::Bufferize (QObject *parent) : QObject (parent) {
+    qDebug() << __FILE__ << __LINE__ << __func__;
+
     m_Instance 			= this;
     m_idxAddSequence 	= 0;
     m_idxGetSequence 	= 0;
     m_idxAddInstantCmd 	= 0;
     m_idxGetInstantCmd 	= 0;
     m_dimVector			= 0;
-    m_serialDev			= NULL;
-}
-
-void Bufferize::setSerial (SerialDev *serial) {
-    m_serialDev = serial;
 }
 
 void Bufferize::addBuffer(const QByteArray &buffer) {
+    qDebug() << __FILE__ << __LINE__ << __func__;
+
     quint8 type = 0;
     if (m_dimVector == 0) {
         return;
     }
-    #warning "Ricavare type message"
+#warning "Ricavare type message"
     switch (type) {
-        case TYPE_SYNC:
-            m_Sync = buffer;
-            break;
-        case TYPE_ISTANT_CMD:
-            m_InstantCmd[m_idxAddInstantCmd] = buffer;
-            m_idxAddInstantCmd++;
-            m_idxAddInstantCmd %= m_dimVector;
-            break;
-        case TYPE_SEQUENCE:
-            m_Sequence[m_idxAddSequence] = buffer;
-            m_idxAddSequence++;
-            m_idxAddSequence %= m_dimVector;
-            break;
+    case TYPE_SYNC:
+        m_Sync = buffer;
+        break;
+    case TYPE_ISTANT_CMD:
+        m_InstantCmd[m_idxAddInstantCmd] = buffer;
+        m_idxAddInstantCmd++;
+        m_idxAddInstantCmd %= m_dimVector;
+        break;
+    case TYPE_SEQUENCE:
+        m_Sequence[m_idxAddSequence] = buffer;
+        m_idxAddSequence++;
+        m_idxAddSequence %= m_dimVector;
+        break;
+    default:
+        qDebug() << "Type:"<< hex << type;
+        qFatal("Message Type not Allowed:");
+        break;
     }
 
-    if (m_serialDev) {
-        m_serialDev->start();
-    }
+    SerialDev::instance()->start();
 }
 
 bool Bufferize::getBuffer(QByteArray &buffer) {
+    qDebug() << __FILE__ << __LINE__ << __func__;
     bool ret = false;
     if (m_dimVector == 0) {
         return false;
     }
 
     if (m_Sync.length() != 0) {
-        #warning "Controllare se fa la copia dei dati"
+#warning "Controllare se fa la copia dei dati"
         buffer = m_Sync;
         m_Sync.clear();
         ret = true;
@@ -86,6 +89,7 @@ bool Bufferize::getBuffer(QByteArray &buffer) {
 }
 
 void Bufferize::setVector (const quint32 &dim) {
+    qDebug() << __FILE__ << __LINE__ << __func__;
     m_dimVector = dim;
     m_Sequence.resize (dim);
     m_InstantCmd.resize (dim);
