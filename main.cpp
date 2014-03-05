@@ -76,9 +76,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    UdpServer::instance()->setDebug(debug);
     ret = UdpServer::instance()->bind(QHostAddress::LocalHost, udpPort);
     if (ret == false) {
         qDebug() << UdpServer::instance()->errorString();
+        return -1;
     }
 
     return app.exec();

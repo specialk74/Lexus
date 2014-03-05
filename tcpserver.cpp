@@ -15,8 +15,6 @@ TcpServer * TcpServer::instance (QObject * parent) {
 }
 
 TcpServer::TcpServer (QObject * parent) : QTcpServer (parent) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     m_Instance = this;
     m_client = NULL;
     m_debug = false;
@@ -40,8 +38,6 @@ void TcpServer::debug (const QString &testo)
 * \brief TcpServer::deleteClient - Metodo per cancellare il client e il relativo socket
 */
 void TcpServer::deleteClient(QTcpSocket *socket) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     if (m_client->getSocket() == socket) {
         disconnect(m_client);
         disconnect(socket);
@@ -76,8 +72,6 @@ void TcpServer::setDebug (const bool &val)
 *  avro' un riferimento.
 */
 void TcpServer::newConnectionSlot() {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     while (hasPendingConnections()) {
         QTcpSocket *socket = nextPendingConnection();
         if (socket) {
@@ -105,7 +99,6 @@ void TcpServer::newConnectionSlot() {
 * \brief TcpServer::erroSocketSlot - Slot per gestire gli errori del socket
 */
 void TcpServer::erroSocketSlot(QAbstractSocket::SocketError) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     QTcpSocket *socket = (QTcpSocket *) sender();
     QString testo = QString ("Client %1 error").arg(socket->peerAddress().toString());
     debug(testo);

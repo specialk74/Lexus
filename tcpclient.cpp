@@ -7,10 +7,7 @@
 static const char headDebug[] = "[TcpClient]";
 
 TcpClient::TcpClient(QObject *parent) :
-    QObject(parent)
-{
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
+    QObject(parent) {
     m_debug = NULL;
     m_socket = NULL;
     connect (SerialDev::instance(), SIGNAL(dataFromDevice(QByteArray)),
@@ -22,8 +19,6 @@ TcpClient::TcpClient(QObject *parent) :
 * \brief TcpClient::fromClients - Slot per gestire i dati che mi arrivano dal client
 */
 void TcpClient::fromClientsSlot() {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     QByteArray buffer = m_socket->readAll();
     if (m_debug)
     {
@@ -39,8 +34,6 @@ void TcpClient::fromClientsSlot() {
 }
 
 void TcpClient::send (const QByteArray &buffer) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     if (m_debug) {
         QDebug debugBuffer = qDebug();
         debugBuffer << headDebug << "Tx ";
@@ -54,15 +47,10 @@ void TcpClient::send (const QByteArray &buffer) {
 
 
 void TcpClient::setSocket (QTcpSocket *socket) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     m_socket = socket;
     connect (m_socket, SIGNAL(readyRead()), this, SLOT(fromClientsSlot()));
 }
 
 QTcpSocket * TcpClient::getSocket () {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     return m_socket;
 }
-

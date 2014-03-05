@@ -20,30 +20,22 @@ SerialDev *SerialDev::instance(QObject *parent) {
 SerialDev::SerialDev(QObject *parent) :
     QSerialPort(parent)
 {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     m_Instance = this;
     m_debug = false;
-//    m_sendInProgress = false;
-
-    qDebug() << headDebug << "CTor";
 }
 
 SerialDev::~SerialDev()
 {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     m_Instance = NULL;
-    qDebug() << headDebug << "DTor" << portName();
 }
 
 void SerialDev::setDebug (const bool &val)
 {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     m_debug = val;
 }
 
 void SerialDev::debug (const QString &testo)
 {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     if (m_debug) {
         qDebug() << headDebug << qPrintable(testo);
     }
@@ -57,7 +49,6 @@ bool SerialDev::configPort (const QString &name)
 {
     bool debugVal = m_debug;
     m_debug = true;
-    qDebug() << __FILE__ << __LINE__ << __func__ << name;
     setPortName(name);
 
     if (!open(QIODevice::ReadWrite)) {
@@ -116,7 +107,6 @@ void SerialDev::sendMsg (const QByteArray &buffer) {
 
     bufferOut.append(DLE);
     bufferOut.append(STX);
-    qDebug() << __FILE__ << __LINE__ << __func__;
 
     foreach (var, buffer) {
         if (var == DLE) {
@@ -139,10 +129,7 @@ void SerialDev::sendMsg (const QByteArray &buffer) {
 }
 
 void SerialDev::start () {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     QByteArray buffer;
-    #warning "Controllare se funziona bytesToWrite"
-//	if ((m_sendInProgress == false) && m_bufferize && m_bufferize->getBuffer(buffer)) {
     if ((bytesToWrite() == 0) && Bufferize::instance()->getBuffer(buffer)) {
         sendMsg (buffer);
     }
@@ -159,7 +146,6 @@ void SerialDev::start () {
  * \param serialPortError
  */
 void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     if (m_debug) {
         qDebug() << "Error" << serialPortError;
     }
@@ -189,22 +175,19 @@ void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
  */
 void SerialDev::fromDeviceSlot() {
     QByteArray buffer = readAll();
-    quint8 var;
-
-    bool foundDLE = false;
-
-    if (m_debug) {
-        QDebug debugBuffer = qDebug();
-        debugBuffer << headDebug << "Rx ";
-        foreach (var, buffer) {
-            debugBuffer << hex << var;
-        }
-    }
-
     m_bufferTemp.append(buffer);
     int len = m_bufferTemp.length();
     if (    (m_bufferTemp.at(0) == DLE) && (m_bufferTemp.at(1) == STX) &&
             (m_bufferTemp.at(len - 2) == DLE) && (m_bufferTemp.at(len - 1) == ETX) ) {
+        quint8 var;
+        bool foundDLE = false;
+        if (m_debug) {
+            QDebug debugBuffer = qDebug();
+            debugBuffer << headDebug << "Rx ";
+            foreach (var, m_bufferTemp) {
+                debugBuffer << hex << var;
+            }
+        }
 
         m_bufferTemp.remove(len - 2, 2);
         m_bufferTemp.remove(0, 2);
@@ -229,6 +212,5 @@ void SerialDev::fromDeviceSlot() {
 }
 
 void SerialDev::bytesWritten(qint64) {
-//    m_sendInProgress = false;
     start();
 }

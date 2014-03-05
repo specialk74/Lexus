@@ -18,8 +18,6 @@ Bufferize::~Bufferize () {
 }
 
 Bufferize::Bufferize (QObject *parent) : QObject (parent) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     m_Instance 			= this;
     m_idxAddSequence 	= 0;
     m_idxGetSequence 	= 0;
@@ -29,8 +27,6 @@ Bufferize::Bufferize (QObject *parent) : QObject (parent) {
 }
 
 void Bufferize::addBuffer(const QByteArray &buffer) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
-
     if (m_dimVector == 0) {
         qFatal("Dim Vector is 0");
         return;
@@ -69,7 +65,6 @@ void Bufferize::addBuffer(const QByteArray &buffer) {
 }
 
 bool Bufferize::getBuffer(QByteArray &buffer) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     bool ret = false;
     if (m_dimVector == 0) {
         return false;
@@ -98,7 +93,6 @@ bool Bufferize::getBuffer(QByteArray &buffer) {
 }
 
 void Bufferize::setVector (const quint32 &dim) {
-    qDebug() << __FILE__ << __LINE__ << __func__;
     m_dimVector = dim;
     m_Sequence.resize (dim);
     m_InstantCmd.resize (dim);

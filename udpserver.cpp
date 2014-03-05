@@ -1,5 +1,8 @@
+#include <QDebug>
+
 #include "bufferize.h"
 #include "udpserver.h"
+static const char headDebug[] = "[UdpClient]";
 
 UdpServer *UdpServer::m_Instance = NULL;
 
@@ -12,9 +15,9 @@ UdpServer *UdpServer::instance(QObject *parent) {
 }
 
 UdpServer::UdpServer(QObject *parent) :
-    QUdpSocket(parent)
-{
+    QUdpSocket(parent) {
     m_Instance = this;
+    m_debug = false;
     connect(this, SIGNAL(readyRead()),
             this, SLOT(readPendingDatagrams()));
 }
@@ -29,6 +32,17 @@ void UdpServer::readPendingDatagrams() {
         datagram.resize(pendingDatagramSize());
 
         readDatagram(datagram.data(), datagram.size());
+
+        if (m_debug)
+        {
+            QDebug debugBuffer = qDebug();
+            debugBuffer << headDebug << "Rx ";
+            quint8 var;
+            foreach (var, datagram) {
+                debugBuffer << hex << var;
+            }
+        }
+
 
         Bufferize::instance()->addBuffer(datagram);
     }
