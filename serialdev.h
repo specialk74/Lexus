@@ -28,6 +28,8 @@ protected:
 private:
     static SerialDev * m_Instance;
     bool m_debug;
+    QByteArray m_bufferData;
+    QByteArray m_bufferTemp;
 //    bool m_sendInProgress;
 };
 

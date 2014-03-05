@@ -189,8 +189,8 @@ void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
  */
 void SerialDev::fromDeviceSlot() {
     QByteArray buffer = readAll();
-    QByteArray bufferOut;
     quint8 var;
+
     bool foundDLE = false;
 
     if (m_debug) {
@@ -200,22 +200,32 @@ void SerialDev::fromDeviceSlot() {
             debugBuffer << hex << var;
         }
     }
-    buffer.remove(0, 2);
-    buffer.remove(buffer.length() - 2, 2);
 
-    foreach (var, buffer) {
-        if (var == DLE) {
-            if (foundDLE == false) {
-                bufferOut.append(var);
+    m_bufferTemp.append(buffer);
+    int len = m_bufferTemp.length();
+    if (    (m_bufferTemp.at(0) == DLE) && (m_bufferTemp.at(1) == STX) &&
+            (m_bufferTemp.at(len - 2) == DLE) && (m_bufferTemp.at(len - 1) == ETX) ) {
+
+        m_bufferTemp.remove(len - 2, 2);
+        m_bufferTemp.remove(0, 2);
+        m_bufferData.clear();
+
+        foreach (var, m_bufferTemp) {
+            if (var == DLE) {
+                if (foundDLE == false) {
+                    m_bufferData.append(var);
+                }
+                foundDLE = !foundDLE;
             }
-            foundDLE = !foundDLE;
+            else {
+                m_bufferData.append(var);
+            }
         }
-        else {
-            bufferOut.append(var);
-        }
-    }
 
-    emit dataFromDevice(bufferOut);
+        emit dataFromDevice(m_bufferData);
+
+        m_bufferTemp.clear();
+    }
 }
 
 void SerialDev::bytesWritten(qint64) {
