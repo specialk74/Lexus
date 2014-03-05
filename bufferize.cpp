@@ -31,30 +31,37 @@ Bufferize::Bufferize (QObject *parent) : QObject (parent) {
 void Bufferize::addBuffer(const QByteArray &buffer) {
     qDebug() << __FILE__ << __LINE__ << __func__;
 
-    quint8 type = 0;
     if (m_dimVector == 0) {
         qFatal("Dim Vector is 0");
         return;
     }
-#warning "Ricavare type message"
-    type = buffer.at(0);
-    switch (type) {
+    if (buffer.length() == 0) {
+        qFatal("Dim Buffer is 0");
+        return;
+    }
+
+    switch (buffer.at(0)) {
     case TYPE_SYNC:
         m_Sync = buffer;
         break;
-    case TYPE_ISTANT_CMD:
+    case TYPE_GET_ID:
+    case TYPE_CMD_OUTPUT_DIGITAL:
+    case TYPE_CMD_OUTPUT_ANALOG:
+    case TYPE_CMD:
+    case TYPE_GET_DIP_SWITCH:
         m_InstantCmd[m_idxAddInstantCmd] = buffer;
         m_idxAddInstantCmd++;
         m_idxAddInstantCmd %= m_dimVector;
         break;
-    case TYPE_SEQUENCE:
+    case TYPE_BUFFER_ALL_OUTPUT_DIGITAL:
+    case TYPE_BUFFER_OUTPUT_DIGITAL:
         m_Sequence[m_idxAddSequence] = buffer;
         m_idxAddSequence++;
         m_idxAddSequence %= m_dimVector;
         break;
     default:
-        qDebug() << "Type:"<< hex << type;
-        qFatal("Message Type not Allowed:");
+        qDebug() << "Type:"<< hex << buffer.at(0);
+        qFatal("Message Type not Allowed.");
         break;
     }
 

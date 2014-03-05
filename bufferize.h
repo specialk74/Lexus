@@ -13,10 +13,14 @@ public:
     bool getBuffer(QByteArray &buffer);
     void setVector(const quint32 &dim);
     enum {
-        TYPE_NONE = 0,
-        TYPE_SYNC = 'p',
-        TYPE_ISTANT_CMD = 'i',
-        TYPE_SEQUENCE = 'o'
+        TYPE_GET_ID = 0,
+        TYPE_CMD_OUTPUT_DIGITAL = 0x20,
+        TYPE_CMD_OUTPUT_ANALOG = 0x21,
+        TYPE_CMD = 0x30,
+        TYPE_SYNC = 0x31,
+        TYPE_BUFFER_ALL_OUTPUT_DIGITAL = 0x40,
+        TYPE_BUFFER_OUTPUT_DIGITAL = 0x41,
+        TYPE_GET_DIP_SWITCH = 0x50
     };
 protected:
     Bufferize(QObject *parent);

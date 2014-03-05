@@ -2,6 +2,10 @@
 #include "bufferize.h"
 #include "serialdev.h"
 
+#define DLE (0x10)
+#define STX (0x02)
+#define ETX (0x03)
+
 static const char headDebug[] = "[SerialDev]";
 SerialDev * SerialDev::m_Instance = NULL;
 
@@ -51,7 +55,9 @@ void SerialDev::debug (const QString &testo)
  */
 bool SerialDev::configPort (const QString &name)
 {
-    qDebug() << __FILE__ << __LINE__ << __func__;
+    bool debugVal = m_debug;
+    m_debug = true;
+    qDebug() << __FILE__ << __LINE__ << __func__ << name;
     setPortName(name);
 
     if (!open(QIODevice::ReadWrite)) {
@@ -100,22 +106,35 @@ bool SerialDev::configPort (const QString &name)
             this, SLOT(errorSlot(QSerialPort::SerialPortError)));
     connect(this, SIGNAL(readyRead()), this, SLOT(fromDeviceSlot()));
 
+    m_debug = debugVal;
    return true;
 }
 
 void SerialDev::sendMsg (const QByteArray &buffer) {
-//    m_sendInProgress = true;
+    QByteArray bufferOut;
+    quint8 var;
+
+    bufferOut.append(DLE);
+    bufferOut.append(STX);
     qDebug() << __FILE__ << __LINE__ << __func__;
+
+    foreach (var, buffer) {
+        if (var == DLE) {
+            bufferOut.append(DLE);
+        }
+        bufferOut.append(var);
+    }
+    bufferOut.append(DLE);
+    bufferOut.append(ETX);
+
     if (m_debug) {
         QDebug debugBuffer = qDebug();
         debugBuffer << headDebug << "Tx ";
-        quint8 var;
-        foreach (var, buffer) {
+        foreach (var, bufferOut) {
             debugBuffer << hex << var;
         }
     }
-
-    write(buffer);
+    write(bufferOut);
     flush();
 }
 
@@ -170,15 +189,33 @@ void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
  */
 void SerialDev::fromDeviceSlot() {
     QByteArray buffer = readAll();
+    QByteArray bufferOut;
+    quint8 var;
+    bool foundDLE = false;
+
     if (m_debug) {
         QDebug debugBuffer = qDebug();
         debugBuffer << headDebug << "Rx ";
-        quint8 var;
         foreach (var, buffer) {
             debugBuffer << hex << var;
         }
     }
-    emit dataFromDevice(buffer);
+    buffer.remove(0, 2);
+    buffer.remove(buffer.length() - 2, 2);
+
+    foreach (var, buffer) {
+        if (var == DLE) {
+            if (foundDLE == false) {
+                bufferOut.append(var);
+            }
+            foundDLE = !foundDLE;
+        }
+        else {
+            bufferOut.append(var);
+        }
+    }
+
+    emit dataFromDevice(bufferOut);
 }
 
 void SerialDev::bytesWritten(qint64) {

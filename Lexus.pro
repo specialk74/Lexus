@@ -20,10 +20,12 @@ SOURCES += main.cpp \
     bufferize.cpp \
     serialdev.cpp \
     tcpclient.cpp \
-    tcpserver.cpp
+    tcpserver.cpp \
+    udpserver.cpp
 
 HEADERS += \
     bufferize.h \
     serialdev.h \
     tcpclient.h \
-    tcpserver.h
+    tcpserver.h \
+    udpserver.h
