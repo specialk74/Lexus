@@ -42,6 +42,7 @@ void TcpServer::deleteClient(QTcpSocket *socket) {
         disconnect(m_client);
         disconnect(socket);
         delete m_client;
+        m_client = NULL;
         socket->deleteLater();
     }
 }

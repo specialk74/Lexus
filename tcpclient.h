@@ -12,15 +12,17 @@ public:
     void setSocket (QTcpSocket *socket);
     QTcpSocket * getSocket ();
     void setDebug (const bool &val) { m_debug = val; }
-
+    ~TcpClient();
 protected slots:
     void fromClientsSlot();
     void send (const QByteArray &buffer);
-
 protected:
+    void debug (const QString &testo);
+    void ricreaFileIp(quint8);
     QByteArray m_buffer;
     QTcpSocket *m_socket;
     bool m_debug;
+    bool m_ipChecked;
 };
 
 
