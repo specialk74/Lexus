@@ -82,6 +82,10 @@ void TcpServer::newConnectionSlot() {
                 client->setDebug(m_debug);
                 m_client = client;
 
+                if (m_debug) {
+                    qDebug() << "Client connected" << socket->peerAddress().toString() <<":"<< socket->peerPort();
+                }
+
                 // Quando c'e' qualche errore nel network
                 connect (socket, SIGNAL(error(QAbstractSocket::SocketError)),
                          this, SLOT(erroSocketSlot(QAbstractSocket::SocketError)));
