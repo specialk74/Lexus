@@ -2,7 +2,7 @@
 
 #include "bufferize.h"
 #include "udpserver.h"
-static const char headDebug[] = "[UdpClient]";
+static const char headDebug[] = "[SlaveUdpClient]";
 
 UdpServer *UdpServer::m_Instance = NULL;
 

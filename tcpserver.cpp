@@ -4,7 +4,7 @@
 #include "tcpserver.h"
 
 TcpServer * TcpServer::m_Instance = NULL;
-static const char headDebug[] = "[TcpServer]";
+static const char headDebug[] = "[SlaveTcpServer]";
 
 TcpServer * TcpServer::instance (QObject * parent) {
     if (m_Instance == NULL) {

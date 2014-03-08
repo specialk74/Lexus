@@ -4,7 +4,7 @@
 #include "tcpclient.h"
 #include "serialdev.h"
 
-static const char headDebug[] = "[TcpClient]";
+static const char headDebug[] = "[SlaveTcpClient]";
 
 TcpClient::TcpClient(QObject *parent) :
     QObject(parent) {

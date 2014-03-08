@@ -2,6 +2,8 @@
 #include "bufferize.h"
 #include "serialdev.h"
 
+static const char headDebug[] = "[SlaveBufferize]";
+
 Bufferize *Bufferize::m_Instance = NULL;
 
 

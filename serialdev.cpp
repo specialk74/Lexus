@@ -6,7 +6,7 @@
 #define STX (0x02)
 #define ETX (0x03)
 
-static const char headDebug[] = "[SerialDev]";
+static const char headDebug[] = "[SlaveSerialDev]";
 SerialDev * SerialDev::m_Instance = NULL;
 
 SerialDev *SerialDev::instance(QObject *parent) {

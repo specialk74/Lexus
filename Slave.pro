@@ -8,7 +8,7 @@ QT       += core network serialport
 
 QT       -= gui
 
-TARGET = Lexus
+TARGET = Slave
 CONFIG   += console
 CONFIG   -= app_bundle
 
