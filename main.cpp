@@ -7,7 +7,7 @@
 #include "udpserver.h"
 
 void usage (char *nomeExe) {
-    qDebug() << nomeExe << "-t[Tcp Port]" << "-u[Udp Port]" << "-d[Serial Device]" << "-g: Enable Debug";
+    qDebug() << nomeExe << "-t[Tcp Port] -u[Udp Port] -d[Serial Device] -g: Enable Debug";
 }
 
 int main(int argc, char *argv[])
