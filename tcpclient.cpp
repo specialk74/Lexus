@@ -11,7 +11,7 @@ static const char headDebug[] = "[SlaveTcpClient]";
 
 
 void TcpClient::ricreaFileIp(quint8) {
-#warning "Creare il file per l'indirizzo IP"
+#warning "Urbino: Creare il file per l'indirizzo IP"
 }
 
 
