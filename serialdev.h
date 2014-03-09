@@ -4,6 +4,8 @@
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
 
+#include "utils.h"
+
 class Bufferize;
 
 class SerialDev : public QSerialPort
@@ -26,27 +28,10 @@ protected:
     void sendMsg (const QByteArray &buffer);
     void debug (const QString &testo);
 private:
-    enum {
-        FIRST_DLE = 0,
-        FIRST_STX,
-        TYPE_MESSAGE,
-        DLE_STATE,
-        FIRST_LENGTH,
-        SECOND_LENGTH,
-        LAST_DLE,
-        LAST_ETX
-    } m_state, m_rightState;
-
-    static SerialDev * m_Instance;
-    bool m_debug;
-    QByteArray m_bufferData;
-    QByteArray m_bufferTemp;
-    quint16 m_len;
-    quint16 m_idx;
-    quint16 m_start;
-    quint16 m_end;
-
-//    bool m_sendInProgress;
+    static  SerialDev           *m_Instance;
+            STATO_DECODER_MSG   m_statoParser;
+            bool                m_debug;
+            QByteArray          m_bufferDest;
 };
 
 #endif // SERIALDEV_H

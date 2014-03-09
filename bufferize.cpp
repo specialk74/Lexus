@@ -26,9 +26,24 @@ Bufferize::Bufferize (QObject *parent) : QObject (parent) {
     m_idxAddInstantCmd 	= 0;
     m_idxGetInstantCmd 	= 0;
     m_dimVector			= 0;
+    m_statoParser       = STATO_DLE_STX;
 }
 
 void Bufferize::addBuffer(const QByteArray &buffer) {
+    int idx = 0;
+/*
+    qDebug() << "Bufferize::addBuffer  start:" << idx <<
+                "  buffer.length(): " << buffer.length() << "   ";
+                */
+    // Fin tanto che non sono arrivato al fondo del buffer, decodifico!
+    while (idx < buffer.length()) {
+        if (decodeMessage (buffer, m_bufferDest, idx, m_statoParser)) {
+            addSingleBuffer(m_bufferDest);
+            // Ripulisco il buffer perche' gia' gestito
+            m_bufferDest.clear();
+        }
+    }
+    SerialDev::instance()->start();
 }
 
 void Bufferize::addSingleBuffer(const QByteArray &buffer) {
@@ -41,7 +56,7 @@ void Bufferize::addSingleBuffer(const QByteArray &buffer) {
         return;
     }
 
-    switch (buffer.at(0)) {
+    switch (buffer.at(2)) {
     case TYPE_SYNC:
         m_Sync = buffer;
         break;
@@ -57,36 +72,32 @@ void Bufferize::addSingleBuffer(const QByteArray &buffer) {
         m_idxAddInstantCmd %= m_dimVector;
         break;
     }
-
-    SerialDev::instance()->start();
 }
 
 bool Bufferize::getBuffer(QByteArray &buffer) {
-    bool ret = false;
     if (m_dimVector == 0) {
         return false;
     }
 
     if (m_Sync.length() != 0) {
-#warning "Controllare se fa la copia dei dati"
         buffer = m_Sync;
         m_Sync.clear();
-        ret = true;
+        return true;
     }
     else if (m_idxAddInstantCmd != m_idxGetInstantCmd) {
         buffer = m_InstantCmd[m_idxGetInstantCmd];
         m_idxGetInstantCmd++;
         m_idxGetInstantCmd %= m_dimVector;
-        ret = true;
+        return true;
     }
     else if (m_idxAddSequence != m_idxGetSequence) {
         buffer = m_Sequence[m_idxGetSequence];
         m_idxGetSequence++;
         m_idxGetSequence %= m_dimVector;
-        ret = true;
+        return true;
     }
 
-    return ret;
+    return false;
 }
 
 void Bufferize::setVector (const quint32 &dim) {

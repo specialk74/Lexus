@@ -2,10 +2,6 @@
 #include "bufferize.h"
 #include "serialdev.h"
 
-#define DLE (0x10)
-#define STX (0x02)
-#define ETX (0x03)
-
 static const char headDebug[] = "[SlaveSerialDev]";
 SerialDev * SerialDev::m_Instance = NULL;
 
@@ -20,10 +16,9 @@ SerialDev *SerialDev::instance(QObject *parent) {
 SerialDev::SerialDev(QObject *parent) :
     QSerialPort(parent)
 {
-    m_Instance = this;
-    m_debug = false;
-    m_idx = 0;
-    m_state = FIRST_DLE;
+    m_Instance      = this;
+    m_debug         = false;
+    m_statoParser   = STATO_DLE_STX;
 }
 
 SerialDev::~SerialDev()
@@ -104,18 +99,16 @@ bool SerialDev::configPort (const QString &name)
 }
 
 void SerialDev::sendMsg (const QByteArray &buffer) {
-    QByteArray bufferOut;
-    quint8 var;
-
     if (m_debug) {
+        quint8 var;
         QDebug debugBuffer = qDebug();
         debugBuffer << headDebug << "Tx ";
-        foreach (var, bufferOut) {
+        foreach (var, buffer) {
             debugBuffer << hex << var;
         }
     }
-    write(bufferOut);
-    flush();
+    write(buffer);
+//    flush();
 }
 
 void SerialDev::start () {
@@ -159,14 +152,14 @@ void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
     }
 }
 
+
 /*!
- * \brief Rs232DevicePrivate::fromDeviceSlot - Legge i byte dalla porta seriale, li decodifica
- *                                             e li passa a "handleMsgRxFromDevice" per gestirli
+ * \brief SerialDev::fromDeviceSlot - Legge i byte dalla porta seriale, li decodifica
+ *                                             e li passa a "dataFromDevice" per gestirli
  */
 void SerialDev::fromDeviceSlot() {
     QByteArray buffer = readAll();
-    m_bufferTemp.append(buffer);
-    int len = buffer.length();
+    int idx = 0;
     if (m_debug) {
         quint8 var;
         QDebug debugBuffer = qDebug();
@@ -175,84 +168,26 @@ void SerialDev::fromDeviceSlot() {
             debugBuffer << hex << var;
         }
     }
-
-    quint16 increment;
-
-    for (quint16 idx = 0; idx < len; idx++) {
-        m_bufferData.append(m_bufferTemp.at(m_idx));
-        switch (m_state) {
-        case FIRST_DLE:
-            increment = 1;
-            if (m_bufferTemp.at(m_idx) == DLE) {
-                m_state = FIRST_STX;
-                m_start = m_idx;
-                m_bufferData.clear();
-                m_bufferData.append(DLE);
-            }
-            break;
-        case FIRST_STX:
-            m_state = (m_bufferTemp.at(m_idx) == STX) ? TYPE_MESSAGE : FIRST_DLE;
-            break;
-        case TYPE_MESSAGE:
-            if (m_bufferTemp.at(m_idx) == DLE) {
-                m_state = DLE_STATE;
-                m_rightState = FIRST_LENGTH;
-            }
-            else {
-                m_state = FIRST_LENGTH;
-            }
-            break;
-        case DLE_STATE:
-            m_state = (m_bufferTemp.at(m_idx) == DLE) ? m_rightState : FIRST_DLE;
-            break;
-        case FIRST_LENGTH:
-           m_len = m_bufferTemp.at(m_idx);
-           if (m_bufferTemp.at(m_idx) == DLE) {
-               m_state = DLE_STATE;
-               m_rightState = SECOND_LENGTH;
-           }
-           else {
-               m_state = SECOND_LENGTH;
-           }
-           break;
-        case SECOND_LENGTH:
-            m_len += m_bufferTemp.at(m_idx);
-            m_end = m_start + m_len - 1;
-           if (m_bufferTemp.at(m_idx) == DLE) {
-               m_state = DLE_STATE;
-               m_rightState = LAST_DLE;
-           }
-           else {
-               m_state = LAST_DLE;
-           }
-           break;
-        case LAST_DLE:
-            if (m_idx >= m_end) {
-                m_state = (m_bufferTemp.at(m_idx) == DLE) ? LAST_ETX : FIRST_DLE;
-            }
-            break;
-        case LAST_ETX:
-            m_state = FIRST_DLE;
-            if (m_bufferTemp.at(m_idx) == ETX) {
-                if (m_debug) {
-                    quint8 var;
-                    QDebug debugBuffer = qDebug();
-                    debugBuffer << headDebug << "Rx ";
-                    foreach (var, m_bufferData) {
-                        debugBuffer << hex << var;
-                    }
-                }
-                emit dataFromDevice(m_bufferData);
-                m_bufferData.clear();
-                if (m_idx >= m_bufferTemp.length() - 1) {
-                    m_idx = 0;
-                    m_bufferTemp.clear();
-                    increment = 0;
+/*
+    qDebug() << "SerialDev::fromDeviceSlot  start:" << idx <<
+                "  buffer.length(): " << buffer.length() << "   ";
+                */
+    // Fin tanto che non sono arrivato al fondo del buffer, decodifico!
+    while (idx < buffer.length()) {
+        if (decodeMessage (buffer, m_bufferDest, idx, m_statoParser)) {
+            if (m_debug) {
+                quint8 var;
+                QDebug debugBuffer = qDebug();
+                debugBuffer << headDebug << "Rx ";
+                foreach (var, m_bufferDest) {
+                    debugBuffer << hex << var;
                 }
             }
-            break;
+
+            emit dataFromDevice(m_bufferDest);
+            // Ripulisco il buffer perche' gia' gestito
+            m_bufferDest.clear();
         }
-        m_idx += increment;
     }
 }
 

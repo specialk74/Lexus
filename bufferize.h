@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVector>
+#include "utils.h"
 
 class Bufferize : public QObject {
     Q_OBJECT
@@ -30,6 +31,8 @@ private:
     QVector<QByteArray> m_Sequence;
     QVector<QByteArray> m_InstantCmd;
     QByteArray m_Sync;
+    QByteArray m_bufferDest;
+    STATO_DECODER_MSG m_statoParser;
 
     quint32 m_idxAddSequence;
     quint32 m_idxGetSequence;
