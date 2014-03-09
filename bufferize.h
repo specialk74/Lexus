@@ -24,6 +24,7 @@ public:
     };
 protected:
     Bufferize(QObject *parent);
+    void addSingleBuffer(const QByteArray &buffer);
 private:
     static Bufferize *m_Instance;
     QVector<QByteArray> m_Sequence;

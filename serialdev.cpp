@@ -22,6 +22,8 @@ SerialDev::SerialDev(QObject *parent) :
 {
     m_Instance = this;
     m_debug = false;
+    m_idx = 0;
+    m_state = FIRST_DLE;
 }
 
 SerialDev::~SerialDev()
@@ -105,18 +107,6 @@ void SerialDev::sendMsg (const QByteArray &buffer) {
     QByteArray bufferOut;
     quint8 var;
 
-    bufferOut.append(DLE);
-    bufferOut.append(STX);
-
-    foreach (var, buffer) {
-        if (var == DLE) {
-            bufferOut.append(DLE);
-        }
-        bufferOut.append(var);
-    }
-    bufferOut.append(DLE);
-    bufferOut.append(ETX);
-
     if (m_debug) {
         QDebug debugBuffer = qDebug();
         debugBuffer << headDebug << "Tx ";
@@ -176,38 +166,93 @@ void SerialDev::errorSlot(QSerialPort::SerialPortError serialPortError) {
 void SerialDev::fromDeviceSlot() {
     QByteArray buffer = readAll();
     m_bufferTemp.append(buffer);
-    int len = m_bufferTemp.length();
-    if (    (m_bufferTemp.at(0) == DLE) && (m_bufferTemp.at(1) == STX) &&
-            (m_bufferTemp.at(len - 2) == DLE) && (m_bufferTemp.at(len - 1) == ETX) ) {
+    int len = buffer.length();
+    if (m_debug) {
         quint8 var;
-        bool foundDLE = false;
-        if (m_debug) {
-            QDebug debugBuffer = qDebug();
-            debugBuffer << headDebug << "Rx ";
-            foreach (var, m_bufferTemp) {
-                debugBuffer << hex << var;
-            }
+        QDebug debugBuffer = qDebug();
+        debugBuffer << headDebug << "Rx(RAW) ";
+        foreach (var, buffer) {
+            debugBuffer << hex << var;
         }
+    }
 
-        m_bufferTemp.remove(len - 2, 2);
-        m_bufferTemp.remove(0, 2);
-        m_bufferData.clear();
+    quint16 increment;
 
-        foreach (var, m_bufferTemp) {
-            if (var == DLE) {
-                if (foundDLE == false) {
-                    m_bufferData.append(var);
-                }
-                foundDLE = !foundDLE;
+    for (quint16 idx = 0; idx < len; idx++) {
+        m_bufferData.append(m_bufferTemp.at(m_idx));
+        switch (m_state) {
+        case FIRST_DLE:
+            increment = 1;
+            if (m_bufferTemp.at(m_idx) == DLE) {
+                m_state = FIRST_STX;
+                m_start = m_idx;
+                m_bufferData.clear();
+                m_bufferData.append(DLE);
+            }
+            break;
+        case FIRST_STX:
+            m_state = (m_bufferTemp.at(m_idx) == STX) ? TYPE_MESSAGE : FIRST_DLE;
+            break;
+        case TYPE_MESSAGE:
+            if (m_bufferTemp.at(m_idx) == DLE) {
+                m_state = DLE_STATE;
+                m_rightState = FIRST_LENGTH;
             }
             else {
-                m_bufferData.append(var);
+                m_state = FIRST_LENGTH;
             }
+            break;
+        case DLE_STATE:
+            m_state = (m_bufferTemp.at(m_idx) == DLE) ? m_rightState : FIRST_DLE;
+            break;
+        case FIRST_LENGTH:
+           m_len = m_bufferTemp.at(m_idx);
+           if (m_bufferTemp.at(m_idx) == DLE) {
+               m_state = DLE_STATE;
+               m_rightState = SECOND_LENGTH;
+           }
+           else {
+               m_state = SECOND_LENGTH;
+           }
+           break;
+        case SECOND_LENGTH:
+            m_len += m_bufferTemp.at(m_idx);
+            m_end = m_start + m_len - 1;
+           if (m_bufferTemp.at(m_idx) == DLE) {
+               m_state = DLE_STATE;
+               m_rightState = LAST_DLE;
+           }
+           else {
+               m_state = LAST_DLE;
+           }
+           break;
+        case LAST_DLE:
+            if (m_idx >= m_end) {
+                m_state = (m_bufferTemp.at(m_idx) == DLE) ? LAST_ETX : FIRST_DLE;
+            }
+            break;
+        case LAST_ETX:
+            m_state = FIRST_DLE;
+            if (m_bufferTemp.at(m_idx) == ETX) {
+                if (m_debug) {
+                    quint8 var;
+                    QDebug debugBuffer = qDebug();
+                    debugBuffer << headDebug << "Rx ";
+                    foreach (var, m_bufferData) {
+                        debugBuffer << hex << var;
+                    }
+                }
+                emit dataFromDevice(m_bufferData);
+                m_bufferData.clear();
+                if (m_idx >= m_bufferTemp.length() - 1) {
+                    m_idx = 0;
+                    m_bufferTemp.clear();
+                    increment = 0;
+                }
+            }
+            break;
         }
-
-        emit dataFromDevice(m_bufferData);
-
-        m_bufferTemp.clear();
+        m_idx += increment;
     }
 }
 
