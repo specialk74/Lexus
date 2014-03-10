@@ -19,6 +19,8 @@ SerialDev::SerialDev(QObject *parent) :
     m_Instance      = this;
     m_debug         = false;
     m_statoParser   = STATO_DLE_STX;
+
+    connect (this, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWrittenSlot(qint64)));
 }
 
 SerialDev::~SerialDev()
@@ -191,6 +193,6 @@ void SerialDev::fromDeviceSlot() {
     }
 }
 
-void SerialDev::bytesWritten(qint64) {
+void SerialDev::bytesWrittenSlot(qint64) {
     start();
 }

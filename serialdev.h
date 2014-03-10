@@ -20,7 +20,7 @@ public:
 signals:
     void dataFromDevice(const QByteArray &buffer);
 protected slots:
-    void bytesWritten(qint64 bytes);
+    void bytesWrittenSlot(qint64 bytes);
     void fromDeviceSlot();
     void errorSlot(QSerialPort::SerialPortError);
 protected:
