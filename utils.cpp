@@ -1,16 +1,17 @@
+#include <stdio.h>
 #include "utils.h"
 
 bool decodeMessage (const QByteArray &bufferIn, QByteArray &bufferOut, int & idx, STATO_DECODER_MSG & stato)
 {
     int end = bufferIn.length();
     char dato;
-//printf ("dentro decodeRs232Msg idx: %d end: %d\n", idx, end);
+//printf ("dentro decodeMessage idx: %d end: %d\n", idx, end);
     for (;idx < end; idx++)
     {
         dato = bufferIn[idx];
         bufferOut.append(dato);
 
-//	printf (" - %x - ", dato);
+//    printf (" - dato:%x - stato:%x  idx:%d\n", dato, stato, idx);
         switch (stato)
         {
         // Cerco il primo DLE della sequenza DLE-STX
@@ -44,7 +45,7 @@ bool decodeMessage (const QByteArray &bufferIn, QByteArray &bufferOut, int & idx
                 return true;
             }
             else {
-                // Errore: questo carattere non doveva essere qua. Pilusco il buffer
+                // Errore: questo carattere non doveva essere qua. Ripulisco il buffer
                 // e ricomincio dall'inizio
                 stato = STATO_DLE_STX;
             }

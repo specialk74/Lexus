@@ -5,6 +5,7 @@
 #include "serialdev.h"
 #include "tcpserver.h"
 #include "udpserver.h"
+#include "powermanager.h"
 
 void usage (char *nomeExe) {
     qDebug() << nomeExe << "-t[Tcp Port] -u[Udp Port] -d[Serial Device] -g: Enable Debug";
@@ -83,5 +84,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+#ifdef Q_WS_QWS
+    PowerManager powermanager;
+#endif
     return app.exec();
 }

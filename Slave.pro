@@ -22,7 +22,8 @@ SOURCES += main.cpp \
     tcpclient.cpp \
     tcpserver.cpp \
     udpserver.cpp \
-    utils.cpp
+    utils.cpp \
+    powermanager.cpp
 
 HEADERS += \
     bufferize.h \
@@ -30,4 +31,5 @@ HEADERS += \
     tcpclient.h \
     tcpserver.h \
     udpserver.h \
-    utils.h
+    utils.h \
+    powermanager.h

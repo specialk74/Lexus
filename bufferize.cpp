@@ -48,11 +48,11 @@ void Bufferize::addBuffer(const QByteArray &buffer) {
 
 void Bufferize::addSingleBuffer(const QByteArray &buffer) {
     if (m_dimVector == 0) {
-        qFatal("Dim Vector is 0");
+        qDebug() << "Dim Vector is 0";
         return;
     }
-    if (buffer.length() == 0) {
-        qFatal("Dim Buffer is 0");
+    if (buffer.length() < 4) {
+        qDebug() << "Dim Buffer is < 4";
         return;
     }
 
