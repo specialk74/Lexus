@@ -6,48 +6,11 @@
 #include "serialdev.h"
 
 static const char headDebug[] = "[SlaveTcpClient]";
-#define ID_MODULO (0x01)
-
-
-
-void TcpClient::ricreaFileIp(quint8) {
-#warning "Urbino: Creare il file per l'indirizzo IP"
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 TcpClient::TcpClient(QObject *parent) :
     QObject(parent) {    
     m_debug = NULL;
     m_socket = NULL;
-    m_ipChecked = true;
     connect (SerialDev::instance(), SIGNAL(dataFromDevice(QByteArray)),
              this, SLOT(send(QByteArray)));
 }
@@ -88,22 +51,6 @@ void TcpClient::send (const QByteArray &buffer) {
         quint8 var;
         foreach (var, buffer) {
             debugBuffer << hex << var;
-        }
-    }
-
-    if (m_ipChecked && buffer.length() >= 6) {
-        if (buffer.at(2) == ID_MODULO) {
-            m_ipChecked = false;
-            foreach (const QHostAddress &address, QNetworkInterface::allAddresses()) {
-                if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost)) {
-                    if ((address.toIPv4Address() & 0x000000FF) != (quint32)buffer.at(5)) {
-                        ricreaFileIp(buffer.at(5));
-                        #ifdef Q_WS_QWS
-                                    system ("reboot");
-                        #endif
-                    }
-                }
-            }
         }
     }
 

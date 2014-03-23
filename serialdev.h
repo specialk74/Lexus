@@ -27,11 +27,13 @@ protected:
     SerialDev(QObject *parent);
     void sendMsg (const QByteArray &buffer);
     void debug (const QString &testo);
+    void ricreaFileIp(quint8 ip);
 private:
     static  SerialDev           *m_Instance;
             STATO_DECODER_MSG   m_statoParser;
             bool                m_debug;
             QByteArray          m_bufferDest;
+            bool                m_ipChecked;
 };
 
 #endif // SERIALDEV_H

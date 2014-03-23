@@ -18,9 +18,13 @@ int main(int argc, char *argv[])
 
     quint16 tcpPort = 0;
     quint16 udpPort = 0;
+    quint16 inputPort = 0;
+    quint16 outputPort = 0;
     bool debug = false;
     QRegExp rxArgTcpPort("-t([0-9]{1,})");
     QRegExp rxArgUdpPort("-u([0-9]{1,})");
+    QRegExp rxArgInput("-i([0-9]{1,})");
+    QRegExp rxArgOutput("-o([0-9]{1,})");
     QRegExp rxArgDevice("-d(\\S+)");
     QRegExp rxArgDebug("-g");
     QString device = QString ("/dev/ttyUSB0");
@@ -40,6 +44,14 @@ int main(int argc, char *argv[])
         else if ((rxArgUdpPort.indexIn(args.at(i)) != -1 )) {
             udpPort =  rxArgUdpPort.cap(1).toInt();
             qDebug() << "Udp port" << udpPort;
+        }
+        else if ((rxArgInput.indexIn(args.at(i)) != -1 )) {
+            inputPort =  rxArgInput.cap(1).toInt();
+            qDebug() << "Input port" << inputPort;
+        }
+        else if ((rxArgOutput.indexIn(args.at(i)) != -1 )) {
+            outputPort =  rxArgOutput.cap(1).toInt();
+            qDebug() << "Output port" << outputPort;
         }
         else {
             qDebug() << "Parametro non riconosciuto: " << args.at(i);
@@ -86,6 +98,7 @@ int main(int argc, char *argv[])
 
 #ifdef Q_WS_QWS
     PowerManager powermanager;
+    powermanager.setIO(inputPort, outputPort);
 #endif
     return app.exec();
 }

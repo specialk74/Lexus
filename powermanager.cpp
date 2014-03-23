@@ -6,11 +6,8 @@
 #include <QFileInfo>
 #include "powermanager.h"
 
-#define BANCATA (3)
-#define NUMERO_GPIO (19)
-#define MAX_BUF (128)
-#define GPIO_POWEROFF (32*BANCATA+NUMERO_GPIO)
-#define TIMEOUT (4)
+#define NUM_TIMEOUT (8)
+#define TIMEOUT (500) // msec
 
 const char unexportGpio[] = "/sys/class/gpio/unexport";
 const char exportGpio[] = "/sys/class/gpio/export";
@@ -18,18 +15,41 @@ const char gpioGpio[] = "/sys/class/gpio/gpio";
 
 PowerManager::PowerManager(QObject *parent) :
     QObject(parent) {
-    m_counter = TIMEOUT;
+    m_counter = NUM_TIMEOUT;
+}
+
+void PowerManager::setIO (quint16 input, quint16 output) {
+    m_input = input;
+    m_output = output;
 
     QString nomeFile;
-    getNFValue(nomeFile, GPIO_POWEROFF);
-    if (QFile::exists(nomeFile) == true) {
-        inport_exportGPIO(unexportGpio, GPIO_POWEROFF);
+
+    if (m_output) {
+        getNFValue(nomeFile, m_output);
+        if (QFile::exists(nomeFile) == true) {
+            inport_exportGPIO(unexportGpio, m_output);
+        }
+
+
+        if (inport_exportGPIO (exportGpio, m_output) && setDirection (m_output, DIR_OUT)) {
+            setOutput('1');
+        }
+        else {
+            m_output = 0;
+        }
     }
 
-    if (inport_exportGPIO (exportGpio, GPIO_POWEROFF) && setDirection (GPIO_POWEROFF)) {
-        getNFValue(m_nomeFile, GPIO_POWEROFF);
-        connect(&m_timer, SIGNAL(timeout()), this, SLOT(timeoutSlot()));
-        m_timer.start(1000);
+    if (m_input) {
+        getNFValue(nomeFile, m_input);
+        if (QFile::exists(nomeFile) == true) {
+            inport_exportGPIO(unexportGpio, m_input);
+        }
+
+        if (inport_exportGPIO (exportGpio, m_input) && setDirection (m_input, DIR_IN)) {
+            getNFValue(m_nomeFile, m_input);
+            connect(&m_timer, SIGNAL(timeout()), this, SLOT(timeoutSlot()));
+            m_timer.start(TIMEOUT);
+        }
     }
 }
 
@@ -43,16 +63,29 @@ void PowerManager::timeoutSlot() {
             qDebug() << "Poweroff countdown" << m_counter;
         }
         else {
-            m_counter = TIMEOUT;
+            m_counter = NUM_TIMEOUT;
         }
         inputFile.close();
     }
     else {
-        m_counter = TIMEOUT;
+        m_counter = NUM_TIMEOUT;
     }
 
     if (m_counter == 0) {
+        setOutput('0');
         system ("poweroff");
+    }
+}
+
+void PowerManager::setOutput (const char valore) {
+    if (m_output) {
+        QString nomeFileOutput;
+        getNFValue(nomeFileOutput, m_output);
+        QFile outputFile (nomeFileOutput);
+        if (outputFile.open(QIODevice::WriteOnly) == true) {
+            outputFile.write(&valore, 1);
+            outputFile.close();
+        }
     }
 }
 
@@ -82,7 +115,7 @@ bool PowerManager::inport_exportGPIO (const QString &nomeFile, quint16 gpio) {
     return ret;
 }
 
-bool PowerManager::setDirection (quint16 gpio) {
+bool PowerManager::setDirection (quint16 gpio, Direction dir) {
     bool ret = false;
     QString nomeFile;
     getNFDirection(nomeFile, gpio);
@@ -90,7 +123,12 @@ bool PowerManager::setDirection (quint16 gpio) {
     if (fileToWrite.open(QIODevice::WriteOnly) == true) {
         QString buf;
         QTextStream out(&fileToWrite);
-        out << "in";
+        if (dir == DIR_IN) {
+            out << "in";
+        }
+        else if (dir == DIR_OUT) {
+            out << "out";
+        }
         fileToWrite.close();
         ret = true;
     }

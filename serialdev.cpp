@@ -1,9 +1,11 @@
 #include <QDebug>
+#include <QNetworkInterface>
 #include "bufferize.h"
 #include "serialdev.h"
 
 static const char headDebug[] = "[SlaveSerialDev]";
 SerialDev * SerialDev::m_Instance = NULL;
+#define ID_SCHEDA_IO (0x02)
 
 SerialDev *SerialDev::instance(QObject *parent) {
     if (m_Instance == NULL) {
@@ -19,6 +21,7 @@ SerialDev::SerialDev(QObject *parent) :
     m_Instance      = this;
     m_debug         = false;
     m_statoParser   = STATO_DLE_STX;
+    m_ipChecked     = true;
 
     connect (this, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWrittenSlot(qint64)));
 }
@@ -186,6 +189,23 @@ void SerialDev::fromDeviceSlot() {
                 }
             }
 
+            if (m_ipChecked && m_bufferDest.length() >= 6) {
+                qDebug() << "m_ipChecked:" << m_ipChecked;
+                if (m_bufferDest.at(2) == ID_SCHEDA_IO) {
+                    foreach (const QHostAddress &address, QNetworkInterface::allAddresses()) {
+                        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost)) {
+                            m_ipChecked = false;
+                            if ((address.toIPv4Address() & 0x000000FF) != (quint32)buffer.at(5)) {
+                                ricreaFileIp(buffer.at(5));
+                                #ifdef Q_WS_QWS
+                                system ("reboot");
+                                #endif
+                            }
+                        }
+                    }
+                }
+            }
+
             emit dataFromDevice(m_bufferDest);
             // Ripulisco il buffer perche' gia' gestito
             m_bufferDest.clear();
@@ -195,4 +215,10 @@ void SerialDev::fromDeviceSlot() {
 
 void SerialDev::bytesWrittenSlot(qint64) {
     start();
+}
+
+void SerialDev::ricreaFileIp(quint8 ip) {
+    char buffer[128];
+    sprintf (buffer, "cp -a startwlan%d.sh startwlan0.sh", ip);
+    system (buffer);
 }

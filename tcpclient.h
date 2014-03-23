@@ -18,11 +18,9 @@ protected slots:
     void send (const QByteArray &buffer);
 protected:
     void debug (const QString &testo);
-    void ricreaFileIp(quint8);
     QByteArray m_buffer;
     QTcpSocket *m_socket;
     bool m_debug;
-    bool m_ipChecked;
 };
 
 
