@@ -17,12 +17,14 @@ public:
     void setDebug (const bool &val);
     void start ();
     bool configPort(const QString &name);
+    quint8 getIpAddress() { return m_ipAddress; }
 signals:
     void dataFromDevice(const QByteArray &buffer);
 protected slots:
     void bytesWrittenSlot(qint64 bytes);
     void fromDeviceSlot();
     void errorSlot(QSerialPort::SerialPortError);
+    void powerOff();
 protected:
     SerialDev(QObject *parent);
     void sendMsg (const QByteArray &buffer);
@@ -34,6 +36,8 @@ private:
             bool                m_debug;
             QByteArray          m_bufferDest;
             bool                m_ipChecked;
+            quint8              m_ipAddress;
+            bool                m_powerOff;
 };
 
 #endif // SERIALDEV_H

@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     }
 
     UdpServer::instance()->setDebug(debug);
-    ret = UdpServer::instance()->bind(QHostAddress::LocalHost, udpPort);
+    ret = UdpServer::instance()->bind(udpPort);
     if (ret == false) {
         qDebug() << UdpServer::instance()->errorString();
         return -1;
@@ -100,5 +100,6 @@ int main(int argc, char *argv[])
     PowerManager powermanager;
     powermanager.setIO(inputPort, outputPort);
 #endif
+
     return app.exec();
 }

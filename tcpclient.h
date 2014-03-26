@@ -10,6 +10,7 @@ class TcpClient : public QObject
 public:
     explicit TcpClient(QObject *parent = 0);
     void setSocket (QTcpSocket *socket);
+    void sendMsg (const QByteArray &data);
     QTcpSocket * getSocket ();
     void setDebug (const bool &val) { m_debug = val; }
     ~TcpClient();

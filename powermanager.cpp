@@ -13,8 +13,19 @@ const char unexportGpio[] = "/sys/class/gpio/unexport";
 const char exportGpio[] = "/sys/class/gpio/export";
 const char gpioGpio[] = "/sys/class/gpio/gpio";
 
-PowerManager::PowerManager(QObject *parent) :
-    QObject(parent) {
+PowerManager *PowerManager::m_Instance = NULL;
+
+PowerManager *PowerManager::instance (QObject *parent)
+{
+    if (m_Instance == NULL) {
+        new PowerManager(parent);
+    }
+    return m_Instance;
+}
+
+PowerManager::PowerManager(QObject *parent):QObject(parent)
+{
+    m_Instance = this;
     m_counter = NUM_TIMEOUT;
 }
 
@@ -32,10 +43,7 @@ void PowerManager::setIO (quint16 input, quint16 output) {
 
 
         if (inport_exportGPIO (exportGpio, m_output) && setDirection (m_output, DIR_OUT)) {
-            setOutput('1');
-        }
-        else {
-            m_output = 0;
+            setOutput ('1'); // alimenta la scheda IO
         }
     }
 
@@ -44,7 +52,6 @@ void PowerManager::setIO (quint16 input, quint16 output) {
         if (QFile::exists(nomeFile) == true) {
             inport_exportGPIO(unexportGpio, m_input);
         }
-
         if (inport_exportGPIO (exportGpio, m_input) && setDirection (m_input, DIR_IN)) {
             getNFValue(m_nomeFile, m_input);
             connect(&m_timer, SIGNAL(timeout()), this, SLOT(timeoutSlot()));

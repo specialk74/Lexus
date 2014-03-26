@@ -33,6 +33,8 @@ void UdpServer::readPendingDatagrams() {
 
         readDatagram(datagram.data(), datagram.size());
 
+        Bufferize::instance()->addBuffer(datagram);
+
         if (m_debug)
         {
             QDebug debugBuffer = qDebug();
@@ -42,8 +44,5 @@ void UdpServer::readPendingDatagrams() {
                 debugBuffer << hex << var;
             }
         }
-
-
-        Bufferize::instance()->addBuffer(datagram);
     }
 }

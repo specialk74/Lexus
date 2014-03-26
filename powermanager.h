@@ -8,11 +8,13 @@ class PowerManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit PowerManager(QObject *parent = 0);
+    static PowerManager * instance (QObject * parent = 0);
     void setIO (quint16 input, quint16 output);
+    void setOutput (const char valore);
 protected slots:
     void timeoutSlot();
 protected:
+    explicit PowerManager(QObject *parent = 0);
     enum Direction {
         DIR_IN,
         DIR_OUT
@@ -23,6 +25,7 @@ protected:
     void getNFValue (QString &nomeFile, quint16 gpio);
     void setOutput (const char valore);
 private:
+    static PowerManager *m_Instance;
     QTimer m_timer;
     quint8 m_counter;
     QString m_nomeFile;

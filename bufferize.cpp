@@ -1,6 +1,10 @@
 #include <QDebug>
 #include "bufferize.h"
 #include "serialdev.h"
+#include "tcpclient.h"
+
+#define VERSIONE_SW_UNITA         1
+#define VERSIONE_SW_DECIMALI      0
 
 static const char headDebug[] = "[SlaveBufferize]";
 
@@ -29,7 +33,7 @@ Bufferize::Bufferize (QObject *parent) : QObject (parent) {
     m_statoParser       = STATO_DLE_STX;
 }
 
-void Bufferize::addBuffer(const QByteArray &buffer) {
+void Bufferize::addBuffer(const QByteArray &buffer, TcpClient *client) {
     int idx = 0;
 /*
     qDebug() << "Bufferize::addBuffer  start:" << idx <<
@@ -38,7 +42,7 @@ void Bufferize::addBuffer(const QByteArray &buffer) {
     // Fin tanto che non sono arrivato al fondo del buffer, decodifico!
     while (idx < buffer.length()) {
         if (decodeMessage (buffer, m_bufferDest, idx, m_statoParser)) {
-            addSingleBuffer(m_bufferDest);
+            addSingleBuffer(m_bufferDest, client);
             // Ripulisco il buffer perche' gia' gestito
             m_bufferDest.clear();
         }
@@ -46,7 +50,7 @@ void Bufferize::addBuffer(const QByteArray &buffer) {
     SerialDev::instance()->start();
 }
 
-void Bufferize::addSingleBuffer(const QByteArray &buffer) {
+void Bufferize::addSingleBuffer(const QByteArray &buffer, TcpClient *client) {
     if (m_dimVector == 0) {
         qDebug() << "Dim Vector is 0";
         return;
@@ -67,7 +71,20 @@ void Bufferize::addSingleBuffer(const QByteArray &buffer) {
         m_idxAddSequence %= m_dimVector;
         break;
     default:
-        m_InstantCmd[m_idxAddInstantCmd] = buffer;
+        if (client) {
+            if (buffer.at(2) == TYPE_GET_ID) { // invio ID
+                QByteArray sendBuffer;
+
+                sendBuffer.append ((char) TYPE_ID_MODULO);
+                sendBuffer.append ((char) 0);// [1] = 0;
+                sendBuffer.append ((char) 6); // len
+                sendBuffer.append ((char) SerialDev::instance()->getIpAddress()); // tipo oggetto
+                sendBuffer.append ((char) VERSIONE_SW_UNITA); // ver SW
+                sendBuffer.append ((char) VERSIONE_SW_DECIMALI); // ver SW
+                client->sendMsg (sendBuffer);
+            }
+        }
+        m_InstantCmd [m_idxAddInstantCmd] = buffer;
         m_idxAddInstantCmd++;
         m_idxAddInstantCmd %= m_dimVector;
         break;

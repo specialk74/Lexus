@@ -41,7 +41,7 @@ void TcpClient::fromClientsSlot() {
         }
     }
 
-    Bufferize::instance()->addBuffer(buffer);
+    Bufferize::instance()->addBuffer(buffer, this);
 }
 
 void TcpClient::send (const QByteArray &buffer) {
@@ -57,6 +57,32 @@ void TcpClient::send (const QByteArray &buffer) {
     m_socket->write(buffer);
 }
 
+void TcpClient::sendMsg(const QByteArray &data) {
+//    qDebug() << __FILE__ << __LINE__ << __func__ << m_socket;
+
+    QByteArray buffer;
+    buffer.append(DLE);
+    buffer.append(STX);
+    quint8 var;
+    foreach (var, data) {
+        buffer.append(var);
+        if (var == DLE) {
+            buffer.append(DLE);
+        }
+    }
+    buffer.append(DLE);
+    buffer.append(ETX);
+
+    if (m_debug) {
+        QDebug debugBuffer = qDebug();
+        debugBuffer << headDebug << "Tx ";
+        foreach (var, buffer) {
+            debugBuffer << hex << var;
+        }
+    }
+
+    m_socket->write(buffer);
+}
 
 void TcpClient::setSocket (QTcpSocket *socket) {
     m_socket = socket;

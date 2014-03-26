@@ -2,10 +2,13 @@
 #include <QNetworkInterface>
 #include "bufferize.h"
 #include "serialdev.h"
+#include "powermanager.h"
+#include "tcpserver.h"
 
 static const char headDebug[] = "[SlaveSerialDev]";
 SerialDev * SerialDev::m_Instance = NULL;
 #define ID_SCHEDA_IO (0x02)
+#define POWER_OFF (0x2F)
 
 SerialDev *SerialDev::instance(QObject *parent) {
     if (m_Instance == NULL) {
@@ -22,6 +25,8 @@ SerialDev::SerialDev(QObject *parent) :
     m_debug         = false;
     m_statoParser   = STATO_DLE_STX;
     m_ipChecked     = true;
+    m_ipAddress     = 0;
+    m_powerOff      = true;
 
     connect (this, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWrittenSlot(qint64)));
 }
@@ -195,22 +200,43 @@ void SerialDev::fromDeviceSlot() {
                     foreach (const QHostAddress &address, QNetworkInterface::allAddresses()) {
                         if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost)) {
                             m_ipChecked = false;
-                            if ((address.toIPv4Address() & 0x000000FF) != (quint32)buffer.at(5)) {
-                                ricreaFileIp(buffer.at(5));
-                                #ifdef Q_WS_QWS
-                                system ("reboot");
-                                #endif
+                            m_ipAddress = buffer.at(5);
+                            if (((quint8)buffer.at(5) >= 0x20) && ((quint8)buffer.at(5) <= 0x2F)) {
+                                if ((address.toIPv4Address() & 0x000000FF) != (quint32)buffer.at(5)) {
+                                    ricreaFileIp(buffer.at(5));
+                                    #ifdef Q_WS_QWS
+                                    system ("reboot");
+                                    #endif
+                                }
                             }
                         }
                     }
                 }
             }
 
+//            qDebug() << "m_bufferDest.length()" << m_bufferDest.length();
+            if (m_powerOff && m_bufferDest.length() >= 3) {
+                if (m_bufferDest.at(2) == POWER_OFF) {
+                    m_powerOff = false;
+                    qDebug() << "power off:";
+                    QTimer::singleShot(1000, this, SLOT(powerOff()));
+                }/* endif */
+            }/* endif */
+
             emit dataFromDevice(m_bufferDest);
             // Ripulisco il buffer perche' gia' gestito
             m_bufferDest.clear();
         }
     }
+}
+
+void SerialDev::powerOff () {
+#ifdef Q_WS_QWS
+    //                    PowerManager::instance()->setOutput('0'); // spegne la scheda IO
+    delete TcpServer::instance();
+    system ("ifconfig wlan0 down");
+    system ("poweroff");
+#endif // #ifdef Q_WS_QWS
 }
 
 void SerialDev::bytesWrittenSlot(qint64) {
