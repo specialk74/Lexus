@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVector>
+#include <QTimer>
 #include "utils.h"
 
 class TcpClient;
@@ -21,6 +22,7 @@ public:
         TYPE_ID_SCHEDA_IO = 0x02,
         TYPE_CMD_OUTPUT_DIGITAL = 0x20,
         TYPE_CMD_OUTPUT_ANALOG = 0x21,
+        TYPE_CMD_REBOOT = 0x2E,
         TYPE_CMD_POWER_OFF = 0x2F,
         TYPE_SYNC = 0x31,
         TYPE_BUFFER_ALL_OUTPUT_DIGITAL = 0x40,
@@ -36,6 +38,11 @@ public:
 protected:
     Bufferize(QObject *parent);
     void addSingleBuffer(const QByteArray &buffer, TcpClient *client);
+
+public slots:
+    void powerOff (void);
+    void reboot (void);
+
 private:
     static Bufferize *m_Instance;
     QVector<QByteArray> m_Sequence;
@@ -50,6 +57,9 @@ private:
     quint32 m_idxGetInstantCmd;
 
     quint32 m_dimVector;
+    quint8 timeoutConn;
+
+    QTimer *timerSec;
 };
 
 #endif // BUFFERIZE_H

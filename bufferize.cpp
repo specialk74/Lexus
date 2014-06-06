@@ -1,7 +1,10 @@
 #include <QDebug>
+#include <QTimer>
 #include "bufferize.h"
 #include "serialdev.h"
 #include "tcpclient.h"
+#include "tcpserver.h"
+
 
 #define VERSIONE_SW_UNITA         1
 #define VERSIONE_SW_DECIMALI      0
@@ -15,6 +18,7 @@ Bufferize * Bufferize::instance (QObject *parent) {
     if (m_Instance == NULL) {
         new Bufferize(parent);
     }
+
 
     return m_Instance;
 }
@@ -31,12 +35,34 @@ Bufferize::Bufferize (QObject *parent) : QObject (parent) {
     m_idxGetInstantCmd 	= 0;
     m_dimVector			= 0;
     m_statoParser       = STATO_DLE_STX;
+
+    timeoutConn = 100;
+
+    timerSec = new QTimer (this);
+    connect (timerSec, SIGNAL(timeout()), this, SLOT(timer1Sec()));
+    timerSec->start (1000);
+}
+
+void TcpServer::timer1Sec (void)
+{
+    sec++;
+
+    if ((sec % 10) == 0) {
+        //client->sendGetId ();
+    }/* endif */
+
+    timeoutConn--;
+    if (timeoutConn == 0) {
+#ifdef Q_WS_QWS
+        system ("reboot");
+#endif // #ifdef Q_WS_QWS
+    }/* endif */
 }
 
 void Bufferize::addBuffer(const QByteArray &buffer, TcpClient *client) {
     int idx = 0;
 /*
-    qDebug() << "Bufferize::addBuffer  start:" << idx <<
+    c "Bufferize::addBuffer  start:" << idx <<
                 "  buffer.length(): " << buffer.length() << "   ";
                 */
     // Fin tanto che non sono arrivato al fondo del buffer, decodifico!
@@ -60,6 +86,8 @@ void Bufferize::addSingleBuffer(const QByteArray &buffer, TcpClient *client) {
         return;
     }
 
+    timeoutConn = 20;
+
     switch (buffer.at(2)) {
     case TYPE_SYNC:
         m_Sync = buffer;
@@ -82,6 +110,14 @@ void Bufferize::addSingleBuffer(const QByteArray &buffer, TcpClient *client) {
                 sendBuffer.append ((char) VERSIONE_SW_UNITA); // ver SW
                 sendBuffer.append ((char) VERSIONE_SW_DECIMALI); // ver SW
                 client->sendMsg (sendBuffer);
+            } else if (buffer.at(2) == TYPE_CMD_POWER_OFF) {
+                qDebug() << "power off:";
+                QTimer::singleShot(1000, this, SLOT(powerOff()));
+
+            } else if (buffer.at(2) == TYPE_CMD_REBOOT) {
+                qDebug() << "power off:";
+                QTimer::singleShot(1000, this, SLOT(reboot()));
+
             }
         }
         m_InstantCmd [m_idxAddInstantCmd] = buffer;
@@ -89,6 +125,24 @@ void Bufferize::addSingleBuffer(const QByteArray &buffer, TcpClient *client) {
         m_idxAddInstantCmd %= m_dimVector;
         break;
     }
+}
+
+void Bufferize::powerOff (void) {
+#ifdef Q_WS_QWS
+    //                    PowerManager::instance()->setOutput('0'); // spegne la scheda IO
+    delete TcpServer::instance();
+    system ("ifconfig wlan0 down");
+    system ("poweroff");
+#endif // #ifdef Q_WS_QWS
+}
+
+void Bufferize::reboot (void) {
+#ifdef Q_WS_QWS
+    //                    PowerManager::instance()->setOutput('0'); // spegne la scheda IO
+    delete TcpServer::instance();
+    system ("ifconfig wlan0 down");
+    system ("reboot");
+#endif // #ifdef Q_WS_QWS
 }
 
 bool Bufferize::getBuffer(QByteArray &buffer) {

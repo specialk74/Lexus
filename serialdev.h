@@ -35,7 +35,7 @@ private:
             STATO_DECODER_MSG   m_statoParser;
             bool                m_debug;
             QByteArray          m_bufferDest;
-            bool                m_ipChecked;
+            quint8              m_ipChecked;
             quint8              m_ipAddress;
             bool                m_powerOff;
 };

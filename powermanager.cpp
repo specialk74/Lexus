@@ -6,8 +6,13 @@
 #include <QFileInfo>
 #include "powermanager.h"
 
-#define NUM_TIMEOUT (8)
-#define TIMEOUT (500) // msec
+/*
+#define BANCATA (3)
+#define NUMERO_GPIO (21)
+#define MAX_BUF (128)
+#define GPIO_POWEROFF (32*BANCATA+NUMERO_GPIO)
+*/
+#define TIMEOUT (8)
 
 const char unexportGpio[] = "/sys/class/gpio/unexport";
 const char exportGpio[] = "/sys/class/gpio/export";
@@ -25,8 +30,8 @@ PowerManager *PowerManager::instance (QObject *parent)
 
 PowerManager::PowerManager(QObject *parent):QObject(parent)
 {
+    m_counter = TIMEOUT;
     m_Instance = this;
-    m_counter = NUM_TIMEOUT;
 }
 
 void PowerManager::setIO (quint16 input, quint16 output) {
@@ -55,7 +60,7 @@ void PowerManager::setIO (quint16 input, quint16 output) {
         if (inport_exportGPIO (exportGpio, m_input) && setDirection (m_input, DIR_IN)) {
             getNFValue(m_nomeFile, m_input);
             connect(&m_timer, SIGNAL(timeout()), this, SLOT(timeoutSlot()));
-            m_timer.start(TIMEOUT);
+            m_timer.start(500);
         }
     }
 }
@@ -70,29 +75,29 @@ void PowerManager::timeoutSlot() {
             qDebug() << "Poweroff countdown" << m_counter;
         }
         else {
-            m_counter = NUM_TIMEOUT;
+            m_counter = TIMEOUT;
         }
         inputFile.close();
     }
     else {
-        m_counter = NUM_TIMEOUT;
+        m_counter = TIMEOUT;
     }
 
+#ifdef Q_WS_QWS
     if (m_counter == 0) {
         setOutput('0');
-        system ("poweroff");
-    }
+        system ("poweroff"); // urbino
+    }/* endif */
+#endif // #ifdef Q_WS_QWS
 }
 
 void PowerManager::setOutput (const char valore) {
-    if (m_output) {
-        QString nomeFileOutput;
-        getNFValue(nomeFileOutput, m_output);
-        QFile outputFile (nomeFileOutput);
-        if (outputFile.open(QIODevice::WriteOnly) == true) {
-            outputFile.write(&valore, 1);
-            outputFile.close();
-        }
+    QString nomeFileOutput;
+    getNFValue(nomeFileOutput, m_output);
+    QFile outputFile (nomeFileOutput);
+    if (outputFile.open(QIODevice::WriteOnly) == true) {
+        outputFile.write(&valore, 1);
+        outputFile.close();
     }
 }
 

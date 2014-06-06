@@ -24,7 +24,7 @@ SerialDev::SerialDev(QObject *parent) :
     m_Instance      = this;
     m_debug         = false;
     m_statoParser   = STATO_DLE_STX;
-    m_ipChecked     = true;
+    m_ipChecked     = 15;
     m_ipAddress     = 0;
     m_powerOff      = true;
 
@@ -195,20 +195,30 @@ void SerialDev::fromDeviceSlot() {
             }
 
             if (m_ipChecked && m_bufferDest.length() >= 6) {
-                qDebug() << "m_ipChecked:" << m_ipChecked;
-                if (m_bufferDest.at(2) == ID_SCHEDA_IO) {
-                    foreach (const QHostAddress &address, QNetworkInterface::allAddresses()) {
-                        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost)) {
-                            m_ipChecked = false;
-                            m_ipAddress = buffer.at(5);
-                            if (((quint8)buffer.at(5) >= 0x20) && ((quint8)buffer.at(5) <= 0x2F)) {
-                                if ((address.toIPv4Address() & 0x000000FF) != (quint32)buffer.at(5)) {
-                                    ricreaFileIp(buffer.at(5));
-                                    #ifdef Q_WS_QWS
-                                    system ("reboot");
-                                    #endif
+                if ((m_bufferDest.at(2) == ID_SCHEDA_IO) && ((quint8) buffer.at(5) != 0xFF)) {
+                    if (m_ipChecked != 0) {
+                        --m_ipChecked;
+                        if (m_ipChecked != 0) {
+                            qDebug() << "m_ipChecked:" << m_ipChecked;
+                            foreach (const QHostAddress &address, QNetworkInterface::allAddresses()) {
+                                if (address.protocol() == QAbstractSocket::IPv4Protocol && (address != QHostAddress(QHostAddress::LocalHost))) {
+                                    m_ipChecked = 0;
+                                    m_ipAddress = (quint8) buffer.at(5);
+                                    if (((quint8)buffer.at(5) >= 0x20) && ((quint8)buffer.at(5) <= 0x2F)) {
+                                        if ((address.toIPv4Address() & 0x000000FF) != (quint32)buffer.at(5)) {
+                                            ricreaFileIp(buffer.at(5));
+                                            #ifdef Q_WS_QWS
+                                            system ("reboot");
+                                            #endif
+                                        }
+                                    }
                                 }
                             }
+                        } else {
+                            ricreaFileIp (buffer.at(5));
+                            #ifdef Q_WS_QWS
+                            system ("reboot");
+                            #endif
                         }
                     }
                 }
@@ -239,12 +249,19 @@ void SerialDev::powerOff () {
 #endif // #ifdef Q_WS_QWS
 }
 
-void SerialDev::bytesWrittenSlot(qint64) {
+void SerialDev::bytesWrittenSlot (qint64) {
     start();
 }
 
-void SerialDev::ricreaFileIp(quint8 ip) {
-    char buffer[128];
+void SerialDev::ricreaFileIp (quint8 ip)
+{
+char buffer [128];
+
+    sprintf (buffer, "cp -a starteth%d.sh starteth0.sh", ip);
+    system (buffer);
+    qDebug() << buffer;
+
     sprintf (buffer, "cp -a startwlan%d.sh startwlan0.sh", ip);
     system (buffer);
+    qDebug() << buffer;
 }

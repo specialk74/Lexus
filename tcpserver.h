@@ -18,10 +18,14 @@ protected:
     TcpServer (QObject * parent);
     void debug (const QString &testo);
     void deleteClient(QTcpSocket *socket);
+    void timer1Sec (void);
+
 private:
     static TcpServer *m_Instance;
     TcpClient* m_client;
     bool m_debug;
+    quint8 sec;
+    quint8 timeoutConn;
 };
 
 #endif // TCPSERVER_H
